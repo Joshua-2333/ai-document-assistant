@@ -4,6 +4,8 @@ from pathlib import Path
 
 from fastmcp import FastMCP
 
+from pypdf import PdfReader
+
 # Create the MCP server
 mcp = FastMCP("AI Document Assistant")
 
@@ -32,28 +34,40 @@ def list_documents() -> list[str]:
 
 @mcp.tool
 def read_document(filename: str) -> str:
-    """Read the contents of a text or Markdown document."""
+    """Read the contents of a text, Markdown, or PDF document."""
 
     file_path = DOCUMENTS_DIR / filename
 
-    # Prevent directory traversal and access outside document storage
+    # Prevent access outside document storage
     if file_path.resolve().parent != DOCUMENTS_DIR.resolve():
         return "Error: Access denied."
 
-    # Only allow text and Markdown files
-    if file_path.suffix.lower() not in {".txt", ".md"}:
+    # Check supported file formats
+    if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
         return "Error: Unsupported file format."
 
-    # Verify that the document exists
+    # Verify the document exists
     if not file_path.is_file():
         return "Error: Document not found."
 
-    # Read the document
     try:
-        return file_path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError):
-        return "Error: Unable to read document."
+        # Read PDF documents
+        if file_path.suffix.lower() == ".pdf":
+            reader = PdfReader(file_path)
 
+            pages = []
+
+            for page in reader.pages:
+                text = page.extract_text() or ""
+                pages.append(text)
+
+            return "\n\n".join(pages)
+
+        # Read text and Markdown documents
+        return file_path.read_text(encoding="utf-8")
+
+    except (OSError, UnicodeError, ValueError) as error:
+        return f"Error: Unable to read document. {error}"
 
 if __name__ == "__main__":
     mcp.run()
