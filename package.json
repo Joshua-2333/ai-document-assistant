@@ -1,0 +1,11 @@
+{
+  "name": "ai-document-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An AI-powered document assistant using React, Node.js, Python, MCP, and Ollama.",
+  "scripts": {},
+  "workspaces": [
+    "client",
+    "server"
+  ]
+}
