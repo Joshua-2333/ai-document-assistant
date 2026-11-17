@@ -30,6 +30,30 @@ def list_documents() -> list[str]:
 
     return sorted(documents)
 
+@mcp.tool
+def read_document(filename: str) -> str:
+    """Read the contents of a text or Markdown document."""
+
+    file_path = DOCUMENTS_DIR / filename
+
+    # Prevent directory traversal and access outside document storage
+    if file_path.resolve().parent != DOCUMENTS_DIR.resolve():
+        return "Error: Access denied."
+
+    # Only allow text and Markdown files
+    if file_path.suffix.lower() not in {".txt", ".md"}:
+        return "Error: Unsupported file format."
+
+    # Verify that the document exists
+    if not file_path.is_file():
+        return "Error: Document not found."
+
+    # Read the document
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return "Error: Unable to read document."
+
 
 if __name__ == "__main__":
     mcp.run()
