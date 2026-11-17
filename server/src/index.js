@@ -1,3 +1,4 @@
+// server/src/index.js
 import express from 'express';
 import healthRoutes from './routes/healthRoutes.js';
 
