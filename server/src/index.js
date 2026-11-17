@@ -1,4 +1,5 @@
 import express from 'express';
+import healthRoutes from './routes/healthRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -6,13 +7,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 
-// Test API endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'AI Document Assistant API is running',
-  });
-});
+// API routes
+app.use('/api/health', healthRoutes);
 
 // Start server
 app.listen(PORT, () => {
