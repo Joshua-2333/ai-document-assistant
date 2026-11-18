@@ -71,12 +71,13 @@ def read_document(filename: str) -> str:
     except (OSError, UnicodeError, ValueError, PdfReadError) as error:
         return f"Error: Unable to read document. {error}"
 
-
 @mcp.tool
 def search_documents(query: str) -> list[dict]:
-    """Search supported documents for a word or phrase."""
+    """Search documents and return text surrounding each match."""
 
-    if not query.strip():
+    query = query.strip()
+
+    if not query:
         return []
 
     results = []
@@ -88,15 +89,24 @@ def search_documents(query: str) -> list[dict]:
         if content.startswith("Error:"):
             continue
 
-        # Search without case sensitivity
-        if query.casefold() in content.casefold():
-            results.append({
-                "filename": filename,
-                "snippet": content[:300],
-            })
+        # Find the first match without case sensitivity
+        match_index = content.casefold().find(query.casefold())
+
+        if match_index == -1:
+            continue
+
+        # Extract up to 100 characters before and after the match
+        start = max(0, match_index - 100)
+        end = min(len(content), match_index + len(query) + 100)
+
+        snippet = content[start:end].strip()
+
+        results.append({
+            "filename": filename,
+            "snippet": snippet,
+        })
 
     return results
-
 
 if __name__ == "__main__":
     mcp.run()

@@ -13,7 +13,7 @@ async def main():
 
         result = await client.call_tool(
             "search_documents",
-            {"query": "Python"}
+            {"query": "NonexistentKeyword12345"}
         )
 
         print("Search results:")
