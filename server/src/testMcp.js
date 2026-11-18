@@ -9,13 +9,24 @@ async function main() {
 
     console.log("Connected to Python MCP server!");
 
-    const result = await client.listTools();
+    // Get available MCP tools
+    const tools = await client.listTools();
 
-    console.log("Available MCP tools:");
+    console.log("\nAvailable MCP tools:");
 
-    for (const tool of result.tools) {
+    for (const tool of tools.tools) {
       console.log(`- ${tool.name}`);
     }
+
+    // Call the Python list_documents tool
+    const result = await client.callTool({
+      name: "list_documents",
+      arguments: {},
+    });
+
+    console.log("\nDocuments returned from Python:");
+    console.log(result.content);
+
   } catch (error) {
     console.error("MCP connection failed:", error);
     process.exitCode = 1;
