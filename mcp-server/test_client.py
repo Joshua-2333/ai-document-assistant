@@ -10,21 +10,14 @@ SERVER_PATH = Path(__file__).resolve().parent / "main.py"
 
 async def main():
     async with Client(SERVER_PATH) as client:
-        test_files = [
-            "test.txt",
-            "../main.py",
-            "../../server/package.json",
-            "missing.txt",
-        ]
 
-        for filename in test_files:
-            result = await client.call_tool(
-                "read_document",
-                {"filename": filename}
-            )
+        result = await client.call_tool(
+            "search_documents",
+            {"query": "Python"}
+        )
 
-            print(f"\nFile: {filename}")
-            print(f"Result: {result.data}")
+        print("Search results:")
+        print(result.data)
 
 
 if __name__ == "__main__":

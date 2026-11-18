@@ -3,8 +3,9 @@
 from pathlib import Path
 
 from fastmcp import FastMCP
-
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
+
 
 # Create the MCP server
 mcp = FastMCP("AI Document Assistant")
@@ -31,6 +32,7 @@ def list_documents() -> list[str]:
             documents.append(file_path.name)
 
     return sorted(documents)
+
 
 @mcp.tool
 def read_document(filename: str) -> str:
@@ -66,8 +68,35 @@ def read_document(filename: str) -> str:
         # Read text and Markdown documents
         return file_path.read_text(encoding="utf-8")
 
-    except (OSError, UnicodeError, ValueError) as error:
+    except (OSError, UnicodeError, ValueError, PdfReadError) as error:
         return f"Error: Unable to read document. {error}"
+
+
+@mcp.tool
+def search_documents(query: str) -> list[dict]:
+    """Search supported documents for a word or phrase."""
+
+    if not query.strip():
+        return []
+
+    results = []
+
+    for filename in list_documents():
+        content = read_document(filename)
+
+        # Skip documents that could not be read
+        if content.startswith("Error:"):
+            continue
+
+        # Search without case sensitivity
+        if query.casefold() in content.casefold():
+            results.append({
+                "filename": filename,
+                "snippet": content[:300],
+            })
+
+    return results
+
 
 if __name__ == "__main__":
     mcp.run()
