@@ -6,6 +6,7 @@ import "./App.css";
 
 function App() {
   const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -24,6 +25,10 @@ function App() {
     loadDocuments();
   }, []);
 
+  function handleSelectDocument(filename) {
+    setSelectedDocument(filename);
+  }
+
   return (
     <main>
       <h1>AI Document Assistant</h1>
@@ -33,7 +38,20 @@ function App() {
       {error && <p role="alert">{error}</p>}
 
       {!loading && !error && (
-        <DocumentList documents={documents} />
+        <>
+          <DocumentList
+            documents={documents}
+            selectedDocument={selectedDocument}
+            onSelectDocument={handleSelectDocument}
+          />
+
+          {selectedDocument && (
+            <section aria-labelledby="selected-document-heading">
+              <h2 id="selected-document-heading">Selected Document</h2>
+              <p>{selectedDocument}</p>
+            </section>
+          )}
+        </>
       )}
     </main>
   );
