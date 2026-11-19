@@ -1,5 +1,6 @@
 // client/src/App.jsx
 import { useEffect, useState } from "react";
+import DocumentList from "./components/DocumentList";
 import { fetchDocuments } from "./services/documentService";
 import "./App.css";
 
@@ -27,25 +28,13 @@ function App() {
     <main>
       <h1>AI Document Assistant</h1>
 
-      <section>
-        <h2>Available Documents</h2>
+      {loading && <p>Loading documents...</p>}
 
-        {loading && <p>Loading documents...</p>}
+      {error && <p role="alert">{error}</p>}
 
-        {error && <p role="alert">{error}</p>}
-
-        {!loading && !error && documents.length === 0 && (
-          <p>No documents available.</p>
-        )}
-
-        {!loading && !error && documents.length > 0 && (
-          <ul>
-            {documents.map((document) => (
-              <li key={document}>{document}</li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {!loading && !error && (
+        <DocumentList documents={documents} />
+      )}
     </main>
   );
 }
