@@ -1,6 +1,7 @@
 // server/src/index.js
-import express from 'express';
-import healthRoutes from './routes/healthRoutes.js';
+import express from "express";
+import healthRoutes from "./routes/healthRoutes.js";
+import documentRoutes from "./routes/documentRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,9 +10,10 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // API routes
-app.use('/api/health', healthRoutes);
+app.use("/api/health", healthRoutes);
+app.use("/api/documents", documentRoutes);
 
-// Start server
+// Start the Express server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
