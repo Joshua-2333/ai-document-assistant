@@ -1,14 +1,20 @@
 // client/src/App.jsx
 import { useEffect, useState } from "react";
 import DocumentList from "./components/DocumentList";
-import { fetchDocuments } from "./services/documentService";
+import {
+  fetchDocuments,
+  fetchDocumentContent,
+} from "./services/documentService";
 import "./App.css";
 
 function App() {
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [documentContent, setDocumentContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(false);
   const [error, setError] = useState("");
+  const [contentError, setContentError] = useState("");
 
   useEffect(() => {
     async function loadDocuments() {
@@ -25,8 +31,20 @@ function App() {
     loadDocuments();
   }, []);
 
-  function handleSelectDocument(filename) {
+  async function handleSelectDocument(filename) {
     setSelectedDocument(filename);
+    setDocumentContent("");
+    setContentError("");
+    setContentLoading(true);
+
+    try {
+      const content = await fetchDocumentContent(filename);
+      setDocumentContent(content);
+    } catch (err) {
+      setContentError(err.message);
+    } finally {
+      setContentLoading(false);
+    }
   }
 
   return (
@@ -47,8 +65,23 @@ function App() {
 
           {selectedDocument && (
             <section aria-labelledby="selected-document-heading">
-              <h2 id="selected-document-heading">Selected Document</h2>
-              <p>{selectedDocument}</p>
+              <h2 id="selected-document-heading">
+                Selected Document
+              </h2>
+
+              <h3>{selectedDocument}</h3>
+
+              {contentLoading && <p>Loading document...</p>}
+
+              {contentError && (
+                <p role="alert">{contentError}</p>
+              )}
+
+              {!contentLoading && !contentError && (
+                <pre style={{ whiteSpace: "pre-wrap" }}>
+                  {documentContent}
+                </pre>
+              )}
             </section>
           )}
         </>

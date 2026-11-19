@@ -14,3 +14,17 @@ export async function fetchDocuments() {
 
   return data.documents;
 }
+
+export async function fetchDocumentContent(filename) {
+  const response = await fetch(
+    `/api/documents/${encodeURIComponent(filename)}`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Unable to read document.");
+  }
+
+  return data.content;
+}
