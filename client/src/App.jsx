@@ -1,6 +1,7 @@
 // client/src/App.jsx
 import { useEffect, useState } from "react";
 import DocumentList from "./components/DocumentList";
+import DocumentViewer from "./components/DocumentViewer";
 import {
   fetchDocuments,
   fetchDocumentContent,
@@ -63,27 +64,12 @@ function App() {
             onSelectDocument={handleSelectDocument}
           />
 
-          {selectedDocument && (
-            <section aria-labelledby="selected-document-heading">
-              <h2 id="selected-document-heading">
-                Selected Document
-              </h2>
-
-              <h3>{selectedDocument}</h3>
-
-              {contentLoading && <p>Loading document...</p>}
-
-              {contentError && (
-                <p role="alert">{contentError}</p>
-              )}
-
-              {!contentLoading && !contentError && (
-                <pre style={{ whiteSpace: "pre-wrap" }}>
-                  {documentContent}
-                </pre>
-              )}
-            </section>
-          )}
+          <DocumentViewer
+            selectedDocument={selectedDocument}
+            documentContent={documentContent}
+            loading={contentLoading}
+            error={contentError}
+          />
         </>
       )}
     </main>
