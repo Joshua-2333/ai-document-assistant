@@ -1,36 +1,53 @@
 // client/src/App.jsx
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useEffect, useState } from "react";
+import { fetchDocuments } from "./services/documentService";
+import "./App.css";
 
 function App() {
-  const [message, setMessage] = useState('Connecting to backend...')
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    async function checkBackend() {
+    async function loadDocuments() {
       try {
-        const response = await fetch('/api/health')
-
-        if (!response.ok) {
-          throw new Error('Backend request failed')
-        }
-
-        const data = await response.json()
-        setMessage(data.message)
-      } catch (error) {
-        console.error(error)
-        setMessage('Unable to connect to backend')
+        const data = await fetchDocuments();
+        setDocuments(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     }
 
-    checkBackend()
-  }, [])
+    loadDocuments();
+  }, []);
 
   return (
-    <div className="app">
+    <main>
       <h1>AI Document Assistant</h1>
-      <p>{message}</p>
-    </div>
-  )
+
+      <section>
+        <h2>Available Documents</h2>
+
+        {loading && <p>Loading documents...</p>}
+
+        {error && <p role="alert">{error}</p>}
+
+        {!loading && !error && documents.length === 0 && (
+          <p>No documents available.</p>
+        )}
+
+        {!loading && !error && documents.length > 0 && (
+          <ul>
+            {documents.map((document) => (
+              <li key={document}>{document}</li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </main>
+  );
 }
 
-export default App
+export default App;
