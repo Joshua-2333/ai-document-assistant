@@ -1,5 +1,5 @@
 // client/src/App.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import DocumentList from "./components/DocumentList";
 import DocumentViewer from "./components/DocumentViewer";
 import {
@@ -17,6 +17,9 @@ function App() {
   const [error, setError] = useState("");
   const [contentError, setContentError] = useState("");
 
+  // Track the most recent document request
+  const latestRequestId = useRef(0);
+
   useEffect(() => {
     async function loadDocuments() {
       try {
@@ -33,6 +36,9 @@ function App() {
   }, []);
 
   async function handleSelectDocument(filename) {
+    // Assign a unique ID to each request
+    const requestId = ++latestRequestId.current;
+
     setSelectedDocument(filename);
     setDocumentContent("");
     setContentError("");
@@ -40,11 +46,25 @@ function App() {
 
     try {
       const content = await fetchDocumentContent(filename);
+
+      // Ignore responses from older requests
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
       setDocumentContent(content);
     } catch (err) {
+      // Ignore errors from older requests
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
       setContentError(err.message);
     } finally {
-      setContentLoading(false);
+      // Only the latest request can update loading state
+      if (requestId === latestRequestId.current) {
+        setContentLoading(false);
+      }
     }
   }
 
