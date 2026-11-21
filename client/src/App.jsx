@@ -95,7 +95,10 @@ function App() {
             error={contentError}
           />
 
-          <DocumentChat selectedDocument={selectedDocument} />
+          <DocumentChat
+            key={selectedDocument}
+            selectedDocument={selectedDocument}
+          />
         </>
       )}
     </main>
