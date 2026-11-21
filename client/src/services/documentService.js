@@ -42,3 +42,26 @@ export async function searchDocuments(query) {
 
   return data.results;
 }
+
+export async function askDocumentQuestion(filename, question) {
+  const response = await fetch("/api/documents/ask", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      filename,
+      question,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(
+      data.message || "Unable to answer the document question."
+    );
+  }
+
+  return data.answer;
+}

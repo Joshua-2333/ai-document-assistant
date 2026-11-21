@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import DocumentList from "./components/DocumentList";
 import DocumentViewer from "./components/DocumentViewer";
 import DocumentSearch from "./components/DocumentSearch";
+import DocumentChat from "./components/DocumentChat";
 import {
   fetchDocuments,
   fetchDocumentContent,
@@ -93,6 +94,8 @@ function App() {
             loading={contentLoading}
             error={contentError}
           />
+
+          <DocumentChat selectedDocument={selectedDocument} />
         </>
       )}
     </main>
