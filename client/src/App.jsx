@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import DocumentList from "./components/DocumentList";
 import DocumentViewer from "./components/DocumentViewer";
+import DocumentSearch from "./components/DocumentSearch";
 import {
   fetchDocuments,
   fetchDocumentContent,
@@ -78,6 +79,8 @@ function App() {
 
       {!loading && !error && (
         <>
+          <DocumentSearch />
+
           <DocumentList
             documents={documents}
             selectedDocument={selectedDocument}
