@@ -1,5 +1,6 @@
 // server/src/controllers/documentController.js
 import { connectMcpServer } from "../services/mcpClient.js";
+import { askDocument } from "../services/documentAiService.js";
 
 export async function getDocuments(req, res) {
   let client;
@@ -165,5 +166,42 @@ export async function searchDocuments(req, res) {
     if (client) {
       await client.close();
     }
+  }
+}
+
+export async function askDocumentQuestion(req, res) {
+  try {
+    const { filename, question } = req.body;
+
+    if (
+      typeof filename !== "string" ||
+      !filename.trim() ||
+      typeof question !== "string" ||
+      !question.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "A filename and question are required.",
+      });
+    }
+
+    const answer = await askDocument(
+      filename.trim(),
+      question.trim()
+    );
+
+    return res.json({
+      success: true,
+      filename: filename.trim(),
+      question: question.trim(),
+      answer,
+    });
+  } catch (error) {
+    console.error("Error asking document question:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to answer the document question.",
+    });
   }
 }
