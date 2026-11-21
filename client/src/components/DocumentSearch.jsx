@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { searchDocuments } from "../services/documentService";
 
-function DocumentSearch() {
+function DocumentSearch({ onSelectDocument }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -68,7 +68,15 @@ function DocumentSearch() {
             <ul>
               {results.map((result) => (
                 <li key={result.filename}>
-                  <h4>{result.filename}</h4>
+                  <h4>
+                    <button
+                      type="button"
+                      onClick={() => onSelectDocument(result.filename)}
+                    >
+                      {result.filename}
+                    </button>
+                  </h4>
+
                   <p style={{ whiteSpace: "pre-wrap" }}>
                     {result.snippet}
                   </p>

@@ -79,7 +79,7 @@ function App() {
 
       {!loading && !error && (
         <>
-          <DocumentSearch />
+          <DocumentSearch onSelectDocument={handleSelectDocument} />
 
           <DocumentList
             documents={documents}
