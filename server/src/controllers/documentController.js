@@ -107,3 +107,63 @@ export async function getDocumentContent(req, res) {
     }
   }
 }
+
+export async function searchDocuments(req, res) {
+  let client;
+
+  try {
+    const { query } = req.query;
+
+    // Validate the search query
+    if (typeof query !== "string" || !query.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "A search query is required.",
+      });
+    }
+
+    // Connect to the Python MCP server
+    client = await connectMcpServer();
+
+    // Call the Python search_documents tool
+    const result = await client.callTool({
+      name: "search_documents",
+      arguments: {
+        query: query.trim(),
+      },
+    });
+
+    if (result.isError) {
+      throw new Error("MCP document search failed.");
+    }
+
+    // Extract the search results
+    const textContent = result.content.find(
+      (item) => item.type === "text"
+    );
+
+    if (!textContent) {
+      throw new Error("No search results returned from MCP.");
+    }
+
+    const results = JSON.parse(textContent.text);
+
+    // Return search results to React
+    return res.json({
+      success: true,
+      results,
+    });
+  } catch (error) {
+    console.error("Error searching documents:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to search documents.",
+    });
+  } finally {
+    // Close the MCP connection
+    if (client) {
+      await client.close();
+    }
+  }
+}
