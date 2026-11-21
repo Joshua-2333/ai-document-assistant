@@ -28,3 +28,17 @@ export async function fetchDocumentContent(filename) {
 
   return data.content;
 }
+
+export async function searchDocuments(query) {
+  const response = await fetch(
+    `/api/documents/search?query=${encodeURIComponent(query)}`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Unable to search documents.");
+  }
+
+  return data.results;
+}
