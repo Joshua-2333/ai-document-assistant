@@ -2,7 +2,15 @@
 const OLLAMA_URL = "http://localhost:11434/api/chat";
 const MODEL = "qwen3:latest";
 
-export async function generateResponse(prompt) {
+export async function generateResponse(prompt, history = []) {
+  const messages = [
+    ...history,
+    {
+      role: "user",
+      content: prompt,
+    },
+  ];
+
   const response = await fetch(OLLAMA_URL, {
     method: "POST",
     headers: {
@@ -10,12 +18,7 @@ export async function generateResponse(prompt) {
     },
     body: JSON.stringify({
       model: MODEL,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      messages,
       stream: false,
       think: false,
     }),

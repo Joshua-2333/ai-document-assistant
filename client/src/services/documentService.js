@@ -43,7 +43,11 @@ export async function searchDocuments(query) {
   return data.results;
 }
 
-export async function askDocumentQuestion(filename, question) {
+export async function askDocumentQuestion(
+  filename,
+  question,
+  history = []
+) {
   const response = await fetch("/api/documents/ask", {
     method: "POST",
     headers: {
@@ -52,6 +56,7 @@ export async function askDocumentQuestion(filename, question) {
     body: JSON.stringify({
       filename,
       question,
+      history,
     }),
   });
 

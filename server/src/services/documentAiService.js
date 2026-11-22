@@ -2,7 +2,7 @@
 import { connectMcpServer } from "./mcpClient.js";
 import { generateResponse } from "./ollamaService.js";
 
-export async function askDocument(filename, question) {
+export async function askDocument(filename, question, history = []) {
   let client;
 
   try {
@@ -48,7 +48,7 @@ User question:
 ${question}
 `;
 
-    return await generateResponse(prompt);
+    return await generateResponse(prompt, history);
   } finally {
     if (client) {
       await client.close();

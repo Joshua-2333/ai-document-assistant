@@ -31,14 +31,14 @@ export async function getDocuments(req, res) {
     const documents = JSON.parse(textContent.text);
 
     // Return the document list to the frontend
-    res.json({
+    return res.json({
       success: true,
       documents,
     });
   } catch (error) {
     console.error("Error fetching documents:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Unable to fetch documents.",
     });
@@ -171,8 +171,9 @@ export async function searchDocuments(req, res) {
 
 export async function askDocumentQuestion(req, res) {
   try {
-    const { filename, question } = req.body;
+    const { filename, question, history = [] } = req.body ?? {};
 
+    // Validate the filename and question
     if (
       typeof filename !== "string" ||
       !filename.trim() ||
@@ -185,11 +186,34 @@ export async function askDocumentQuestion(req, res) {
       });
     }
 
+    // Validate conversation history
+    if (
+      !Array.isArray(history) ||
+      history.length > 20 ||
+      !history.every(
+        (message) =>
+          message &&
+          typeof message === "object" &&
+          !Array.isArray(message) &&
+          ["user", "assistant"].includes(message.role) &&
+          typeof message.content === "string" &&
+          message.content.length <= 10000
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid conversation history.",
+      });
+    }
+
+    // Ask Qwen3 using the document and previous messages
     const answer = await askDocument(
       filename.trim(),
-      question.trim()
+      question.trim(),
+      history
     );
 
+    // Return the AI-generated answer to React
     return res.json({
       success: true,
       filename: filename.trim(),
