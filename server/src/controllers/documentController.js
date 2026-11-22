@@ -229,3 +229,33 @@ export async function askDocumentQuestion(req, res) {
     });
   }
 }
+
+export async function uploadDocumentFile(req, res) {
+  try {
+    // Check whether Multer received a file
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a document to upload.",
+      });
+    }
+
+    // Return information about the uploaded document
+    return res.status(201).json({
+      success: true,
+      message: "Document uploaded successfully.",
+      document: {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+      },
+    });
+  } catch (error) {
+    console.error("Error uploading document:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to upload document.",
+    });
+  }
+}
