@@ -4,6 +4,7 @@ import DocumentList from "./components/DocumentList";
 import DocumentViewer from "./components/DocumentViewer";
 import DocumentSearch from "./components/DocumentSearch";
 import DocumentChat from "./components/DocumentChat";
+import DocumentUpload from "./components/DocumentUpload";
 import {
   fetchDocuments,
   fetchDocumentContent,
@@ -70,9 +71,22 @@ function App() {
     }
   }
 
+  // Refresh the document list after a successful upload
+  async function handleUploadSuccess(document) {
+    const updatedDocuments = await fetchDocuments();
+
+    setDocuments(updatedDocuments);
+    setError("");
+
+    // Automatically open the newly uploaded document
+    await handleSelectDocument(document.filename);
+  }
+
   return (
     <main>
       <h1>AI Document Assistant</h1>
+
+      <DocumentUpload onUploadSuccess={handleUploadSuccess} />
 
       {loading && <p>Loading documents...</p>}
 
@@ -80,7 +94,9 @@ function App() {
 
       {!loading && !error && (
         <>
-          <DocumentSearch onSelectDocument={handleSelectDocument} />
+          <DocumentSearch
+            onSelectDocument={handleSelectDocument}
+          />
 
           <DocumentList
             documents={documents}

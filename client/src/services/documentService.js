@@ -70,3 +70,22 @@ export async function askDocumentQuestion(
 
   return data.answer;
 }
+
+export async function uploadDocument(file) {
+  const formData = new FormData();
+
+  formData.append("document", file);
+
+  const response = await fetch("/api/documents/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to upload document.");
+  }
+
+  return data.document;
+}
