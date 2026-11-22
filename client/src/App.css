@@ -1,7 +1,105 @@
+/*client/src/App.css*/
+/* Application container */
+
 #root {
   min-height: 100vh;
 }
 
-.app {
-  min-height: 100vh;
+main {
+  width: min(100% - 2rem, 1100px);
+  margin: 0 auto;
+  padding: 2.5rem 0 4rem;
+}
+
+/* Typography */
+
+h1 {
+  margin: 0 0 2rem;
+  color: #111827;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+h2 {
+  margin: 0 0 1.25rem;
+  color: #111827;
+  font-size: 1.35rem;
+  line-height: 1.4;
+}
+
+h3 {
+  margin: 1rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+h4 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+p {
+  line-height: 1.6;
+}
+
+/* Section cards */
+
+main > section {
+  margin-bottom: 1.5rem;
+  padding: 1.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+/* Document content */
+
+pre {
+  max-width: 100%;
+  padding: 1rem;
+  overflow-x: auto;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #1f2937;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+/* Lists */
+
+ul,
+ol {
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.65rem;
+  line-height: 1.6;
+}
+
+/* Responsive foundation */
+
+@media (max-width: 600px) {
+  main {
+    width: calc(100% - 1.5rem);
+    padding: 1.5rem 0 3rem;
+  }
+
+  main > section {
+    padding: 1.25rem;
+    border-radius: 10px;
+  }
+
+  h1 {
+    margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
 }
