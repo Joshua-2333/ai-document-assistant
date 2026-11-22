@@ -1,4 +1,5 @@
-/*client/src/App.css*/
+/* client/src/App.css */
+
 /* Application container */
 
 #root {
@@ -82,7 +83,124 @@ li {
   line-height: 1.6;
 }
 
-/* Responsive foundation */
+/* Forms */
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+label {
+  display: block;
+  color: #374151;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Text inputs and textareas */
+
+input[type="search"],
+input[type="text"],
+textarea {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.85rem 1rem;
+  color: #111827;
+  background-color: #ffffff;
+  border: 1px solid #9ca3af;
+  border-radius: 8px;
+  outline-offset: 3px;
+  transition: border-color 0.2s ease;
+}
+
+input[type="search"]:focus,
+input[type="text"]:focus,
+textarea:focus {
+  border-color: #1d4ed8;
+  outline: 2px solid #1d4ed8;
+}
+
+textarea {
+  min-height: 110px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+/* File upload input */
+
+input[type="file"] {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.75rem;
+  color: #374151;
+  background-color: #f9fafb;
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 1rem;
+  padding: 0.65rem 1rem;
+  color: #1e40af;
+  background-color: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Buttons */
+
+button {
+  padding: 0.75rem 1.25rem;
+  color: #ffffff;
+  background-color: #1d4ed8;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background-color: #1e40af;
+  border-color: #1e40af;
+}
+
+button:focus-visible,
+input[type="file"]:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+button:disabled {
+  color: #4b5563;
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+/* Status and error messages */
+
+[role="status"] {
+  color: #1e40af;
+  font-weight: 500;
+}
+
+[role="alert"] {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+/* Responsive design */
 
 @media (max-width: 600px) {
   main {
@@ -101,5 +219,28 @@ li {
 
   h2 {
     font-size: 1.2rem;
+  }
+
+  form {
+    align-items: stretch;
+  }
+
+  form button {
+    width: 100%;
+  }
+
+  input[type="file"]::file-selector-button {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Respect reduced-motion preferences */
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  input[type="search"],
+  input[type="text"],
+  textarea {
+    transition: none;
   }
 }
