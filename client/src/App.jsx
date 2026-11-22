@@ -91,43 +91,75 @@ function App() {
   }
 
   return (
-    <main>
-      <h1>AI Document Assistant</h1>
+    <main className="app-container">
+      <header className="app-header">
+        <h1>AI Document Assistant</h1>
+        <p>
+          Upload, search, read, and ask AI questions about your documents.
+        </p>
+      </header>
 
-      <DocumentUpload onUploadSuccess={handleUploadSuccess} />
+      <div className="app-dashboard">
+        <div className="app-sidebar">
+          <DocumentUpload onUploadSuccess={handleUploadSuccess} />
 
-      {loading && <p>Loading documents...</p>}
+          {loading && <p role="status">Loading documents...</p>}
 
-      {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{error}</p>}
 
-      {!loading && !error && (
-        <>
-          <DocumentSearch
-            documents={documents}
-            onSelectDocument={handleSelectDocument}
-          />
+          {!loading && !error && (
+            <>
+              <DocumentSearch
+                documents={documents}
+                onSelectDocument={handleSelectDocument}
+              />
 
-          <DocumentList
-            documents={documents}
-            selectedDocument={selectedDocument}
-            onSelectDocument={handleSelectDocument}
-          />
+              <DocumentList
+                documents={documents}
+                selectedDocument={selectedDocument}
+                onSelectDocument={handleSelectDocument}
+              />
+            </>
+          )}
+        </div>
 
-          <DocumentViewer
-            selectedDocument={selectedDocument}
-            originalName={selectedOriginalName}
-            documentContent={documentContent}
-            loading={contentLoading}
-            error={contentError}
-          />
+        <div className="app-workspace">
+          {!loading && !error && (
+            <>
+              {selectedDocument ? (
+                <>
+                  <DocumentViewer
+                    selectedDocument={selectedDocument}
+                    originalName={selectedOriginalName}
+                    documentContent={documentContent}
+                    loading={contentLoading}
+                    error={contentError}
+                  />
 
-          <DocumentChat
-            key={selectedDocument}
-            selectedDocument={selectedDocument}
-            originalName={selectedOriginalName}
-          />
-        </>
-      )}
+                  <DocumentChat
+                    key={selectedDocument}
+                    selectedDocument={selectedDocument}
+                    originalName={selectedOriginalName}
+                  />
+                </>
+              ) : (
+                <section
+                  className="app-empty-state"
+                  aria-labelledby="empty-state-heading"
+                >
+                  <h2 id="empty-state-heading">
+                    No Document Selected
+                  </h2>
+                  <p>
+                    Select a document from the list or upload a new
+                    document to start reading and asking questions.
+                  </p>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

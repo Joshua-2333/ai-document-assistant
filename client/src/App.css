@@ -686,3 +686,109 @@ button:disabled {
     font-size: 0.9rem;
   }
 }
+
+/* Responsive dashboard layout */
+/* Application header */
+
+.app-header {
+  margin-bottom: 2rem;
+}
+
+.app-header h1 {
+  margin-bottom: 0.75rem;
+}
+
+.app-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Main dashboard grid */
+
+.app-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr);
+  align-items: start;
+  gap: 1.5rem;
+}
+
+/* Dashboard columns */
+
+.app-sidebar,
+.app-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+/* Section cards inside dashboard columns */
+
+.app-sidebar > section,
+.app-workspace > section {
+  margin: 0;
+  padding: 1.75rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+/* Empty workspace */
+
+.app-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  text-align: center;
+}
+
+.app-empty-state h2 {
+  margin-bottom: 0.75rem;
+}
+
+.app-empty-state p {
+  max-width: 420px;
+  margin: 0;
+  color: #6b7280;
+}
+
+/* Tablet and mobile layout */
+
+@media (max-width: 767px) {
+  .app-dashboard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .app-sidebar,
+  .app-workspace {
+    gap: 1.25rem;
+  }
+
+  .app-header {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Small mobile screens */
+
+@media (max-width: 600px) {
+  .app-sidebar > section,
+  .app-workspace > section {
+    padding: 1.25rem;
+    border-radius: 10px;
+  }
+
+  .app-header p {
+    font-size: 0.95rem;
+  }
+
+  .app-empty-state {
+    min-height: 200px;
+  }
+}
