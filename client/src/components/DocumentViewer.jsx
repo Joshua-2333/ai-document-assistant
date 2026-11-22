@@ -1,6 +1,7 @@
 // client/src/components/DocumentViewer.jsx
 function DocumentViewer({
   selectedDocument,
+  originalName,
   documentContent,
   loading,
   error,
@@ -15,7 +16,7 @@ function DocumentViewer({
         Selected Document
       </h2>
 
-      <h3>{selectedDocument}</h3>
+      <h3>{originalName || selectedDocument}</h3>
 
       {loading && <p role="status">Loading document...</p>}
 

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { askDocumentQuestion } from "../services/documentService";
 
-function DocumentChat({ selectedDocument }) {
+function DocumentChat({ selectedDocument, originalName }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,8 @@ function DocumentChat({ selectedDocument }) {
       <h2 id="document-chat-heading">Ask AI About This Document</h2>
 
       <p>
-        Selected document: <strong>{selectedDocument}</strong>
+        Selected document:{" "}
+        <strong>{originalName || selectedDocument}</strong>
       </p>
 
       <form onSubmit={handleSubmit}>

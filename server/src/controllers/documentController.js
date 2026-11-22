@@ -2,6 +2,10 @@
 import { unlink } from "node:fs/promises";
 import { connectMcpServer } from "../services/mcpClient.js";
 import { askDocument } from "../services/documentAiService.js";
+import {
+  getDocumentMetadata,
+  saveDocumentMetadata,
+} from "../services/documentMetadataService.js";
 import { validateDocument } from "../utils/validateDocument.js";
 
 export async function getDocuments(req, res) {
@@ -30,9 +34,18 @@ export async function getDocuments(req, res) {
       throw new Error("No document data returned from MCP.");
     }
 
-    const documents = JSON.parse(textContent.text);
+    const filenames = JSON.parse(textContent.text);
 
-    // Return the document list to the frontend
+    // Read the saved original filenames
+    const metadata = await getDocumentMetadata();
+
+    // Combine stored filenames with display names
+    const documents = filenames.map((filename) => ({
+      filename,
+      originalName: metadata[filename]?.originalName ?? filename,
+    }));
+
+    // Return document information to React
     return res.json({
       success: true,
       documents,
@@ -255,7 +268,13 @@ export async function uploadDocumentFile(req, res) {
       });
     }
 
-    // Return information about the validated document
+    // Save the original filename in document metadata
+    await saveDocumentMetadata(
+      req.file.filename,
+      req.file.originalname
+    );
+
+    // Return information about the uploaded document
     return res.status(201).json({
       success: true,
       message: "Document uploaded successfully.",
@@ -268,7 +287,7 @@ export async function uploadDocumentFile(req, res) {
   } catch (error) {
     console.error("Error uploading document:", error);
 
-    // Remove the uploaded file if validation fails unexpectedly
+    // Remove the uploaded file if an error occurs
     if (req.file?.path) {
       try {
         await unlink(req.file.path);

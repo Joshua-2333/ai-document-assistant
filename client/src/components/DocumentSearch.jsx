@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { searchDocuments } from "../services/documentService";
 
-function DocumentSearch({ onSelectDocument }) {
+function DocumentSearch({ documents, onSelectDocument }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,6 +30,15 @@ function DocumentSearch({ onSelectDocument }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Find the original filename using document metadata
+  function getOriginalName(filename) {
+    const document = documents.find(
+      (item) => item.filename === filename
+    );
+
+    return document?.originalName ?? filename;
   }
 
   return (
@@ -73,7 +82,7 @@ function DocumentSearch({ onSelectDocument }) {
                       type="button"
                       onClick={() => onSelectDocument(result.filename)}
                     >
-                      {result.filename}
+                      {getOriginalName(result.filename)}
                     </button>
                   </h4>
 

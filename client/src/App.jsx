@@ -38,6 +38,14 @@ function App() {
     loadDocuments();
   }, []);
 
+  // Find the original filename for the selected document
+  const selectedDocumentInfo = documents.find(
+    (document) => document.filename === selectedDocument
+  );
+
+  const selectedOriginalName =
+    selectedDocumentInfo?.originalName ?? selectedDocument;
+
   async function handleSelectDocument(filename) {
     // Assign a unique ID to each request
     const requestId = ++latestRequestId.current;
@@ -95,6 +103,7 @@ function App() {
       {!loading && !error && (
         <>
           <DocumentSearch
+            documents={documents}
             onSelectDocument={handleSelectDocument}
           />
 
@@ -106,6 +115,7 @@ function App() {
 
           <DocumentViewer
             selectedDocument={selectedDocument}
+            originalName={selectedOriginalName}
             documentContent={documentContent}
             loading={contentLoading}
             error={contentError}
@@ -114,6 +124,7 @@ function App() {
           <DocumentChat
             key={selectedDocument}
             selectedDocument={selectedDocument}
+            originalName={selectedOriginalName}
           />
         </>
       )}

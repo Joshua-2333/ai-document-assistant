@@ -9,13 +9,13 @@ function DocumentList({ documents, selectedDocument, onSelectDocument }) {
       ) : (
         <ul>
           {documents.map((document) => (
-            <li key={document}>
+            <li key={document.filename}>
               <button
                 type="button"
-                onClick={() => onSelectDocument(document)}
-                aria-pressed={selectedDocument === document}
+                onClick={() => onSelectDocument(document.filename)}
+                aria-pressed={selectedDocument === document.filename}
               >
-                {document}
+                {document.originalName}
               </button>
             </li>
           ))}
