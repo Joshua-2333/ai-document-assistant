@@ -42,7 +42,10 @@ function DocumentSearch({ documents, onSelectDocument }) {
   }
 
   return (
-    <section aria-labelledby="document-search-heading">
+    <section
+      className="document-search-section"
+      aria-labelledby="document-search-heading"
+    >
       <h2 id="document-search-heading">Search Documents</h2>
 
       <form onSubmit={handleSearch}>
@@ -58,35 +61,58 @@ function DocumentSearch({ documents, onSelectDocument }) {
           placeholder="e.g. Python"
         />
 
-        <button type="submit" disabled={loading || !query.trim()}>
+        <button
+          type="submit"
+          disabled={loading || !query.trim()}
+        >
           {loading ? "Searching..." : "Search"}
         </button>
       </form>
 
-      {loading && <p role="status">Searching documents...</p>}
+      {loading && (
+        <p role="status">Searching documents...</p>
+      )}
 
       {error && <p role="alert">{error}</p>}
 
       {hasSearched && !loading && !error && (
-        <div aria-live="polite">
+        <div
+          className="document-search-results"
+          aria-live="polite"
+        >
           <h3>Search Results</h3>
 
           {results.length === 0 ? (
             <p>No matching documents found.</p>
           ) : (
-            <ul>
+            <ul className="search-results-list">
               {results.map((result) => (
-                <li key={result.filename}>
-                  <h4>
+                <li
+                  key={result.filename}
+                  className="search-result-item"
+                >
+                  <h4 className="search-result-title">
                     <button
                       type="button"
-                      onClick={() => onSelectDocument(result.filename)}
+                      className="search-result-button"
+                      onClick={() =>
+                        onSelectDocument(result.filename)
+                      }
                     >
-                      {getOriginalName(result.filename)}
+                      <span
+                        className="search-result-icon"
+                        aria-hidden="true"
+                      >
+                        📄
+                      </span>
+
+                      <span className="search-result-filename">
+                        {getOriginalName(result.filename)}
+                      </span>
                     </button>
                   </h4>
 
-                  <p style={{ whiteSpace: "pre-wrap" }}>
+                  <p className="search-result-snippet">
                     {result.snippet}
                   </p>
                 </li>
