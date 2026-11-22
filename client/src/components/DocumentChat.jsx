@@ -1,4 +1,5 @@
 // client/src/components/DocumentChat.jsx
+
 import { useEffect, useRef, useState } from "react";
 import { askDocumentQuestion } from "../services/documentService";
 
@@ -87,15 +88,23 @@ function DocumentChat({ selectedDocument, originalName }) {
   }
 
   return (
-    <section aria-labelledby="document-chat-heading">
-      <h2 id="document-chat-heading">Ask AI About This Document</h2>
+    <section
+      className="document-chat-section"
+      aria-labelledby="document-chat-heading"
+    >
+      <h2 id="document-chat-heading">
+        Ask AI About This Document
+      </h2>
 
-      <p>
+      <p className="document-chat-selected">
         Selected document:{" "}
         <strong>{originalName || selectedDocument}</strong>
       </p>
 
-      <form onSubmit={handleSubmit}>
+      <form
+        className="document-chat-form"
+        onSubmit={handleSubmit}
+      >
         <label htmlFor="document-question">
           Ask a question about this document
         </label>
@@ -123,20 +132,37 @@ function DocumentChat({ selectedDocument, originalName }) {
       {error && <p role="alert">{error}</p>}
 
       {messages.length > 0 && (
-        <div aria-live="polite">
+        <div
+          className="document-chat-history"
+          aria-live="polite"
+        >
           <h3>Conversation History</h3>
 
-          <ol>
-            {messages.map((message, index) => (
-              <li key={index}>
-                <strong>
-                  {message.role === "user" ? "You" : "Qwen3"}:
-                </strong>{" "}
-                <span style={{ whiteSpace: "pre-wrap" }}>
-                  {message.content}
-                </span>
-              </li>
-            ))}
+          <ol className="chat-messages">
+            {messages.map((message, index) => {
+              const isUser = message.role === "user";
+
+              return (
+                <li
+                  key={index}
+                  className={`chat-message ${
+                    isUser
+                      ? "chat-message-user"
+                      : "chat-message-assistant"
+                  }`}
+                >
+                  <div className="chat-message-bubble">
+                    <strong className="chat-message-sender">
+                      {isUser ? "You" : "Qwen3"}
+                    </strong>
+
+                    <span className="chat-message-content">
+                      {message.content}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       )}
