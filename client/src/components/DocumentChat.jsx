@@ -27,6 +27,10 @@ function DocumentChat({ selectedDocument }) {
     const requestId = ++latestRequestId.current;
     const currentQuestion = question.trim();
 
+    // Capture previous messages before adding the new question
+    // Limit history to the last 20 messages
+    const conversationHistory = messages.slice(-20);
+
     setLoading(true);
     setError("");
     setQuestion("");
@@ -41,9 +45,11 @@ function DocumentChat({ selectedDocument }) {
     ]);
 
     try {
+      // Send the question and previous messages to Qwen3
       const response = await askDocumentQuestion(
         selectedDocument,
-        currentQuestion
+        currentQuestion,
+        conversationHistory
       );
 
       if (requestId !== latestRequestId.current) {
@@ -64,6 +70,11 @@ function DocumentChat({ selectedDocument }) {
       }
 
       setError(err.message);
+
+      // Remove the unanswered question from conversation history
+      setMessages((previousMessages) =>
+        previousMessages.slice(0, -1)
+      );
     } finally {
       if (requestId === latestRequestId.current) {
         setLoading(false);
@@ -104,7 +115,9 @@ function DocumentChat({ selectedDocument }) {
         </button>
       </form>
 
-      {loading && <p role="status">Qwen3 is generating an answer...</p>}
+      {loading && (
+        <p role="status">Qwen3 is generating an answer...</p>
+      )}
 
       {error && <p role="alert">{error}</p>}
 
