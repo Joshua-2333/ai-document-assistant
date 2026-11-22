@@ -1,6 +1,8 @@
 // server/src/controllers/documentController.js
+import { unlink } from "node:fs/promises";
 import { connectMcpServer } from "../services/mcpClient.js";
 import { askDocument } from "../services/documentAiService.js";
+import { validateDocument } from "../utils/validateDocument.js";
 
 export async function getDocuments(req, res) {
   let client;
@@ -240,7 +242,20 @@ export async function uploadDocumentFile(req, res) {
       });
     }
 
-    // Return information about the uploaded document
+    // Validate the actual uploaded file contents
+    const isValid = await validateDocument(req.file.path);
+
+    if (!isValid) {
+      // Delete the invalid uploaded file
+      await unlink(req.file.path);
+
+      return res.status(400).json({
+        success: false,
+        message: "Invalid document content or file format.",
+      });
+    }
+
+    // Return information about the validated document
     return res.status(201).json({
       success: true,
       message: "Document uploaded successfully.",
@@ -252,6 +267,18 @@ export async function uploadDocumentFile(req, res) {
     });
   } catch (error) {
     console.error("Error uploading document:", error);
+
+    // Remove the uploaded file if validation fails unexpectedly
+    if (req.file?.path) {
+      try {
+        await unlink(req.file.path);
+      } catch (cleanupError) {
+        console.error(
+          "Error removing uploaded file:",
+          cleanupError
+        );
+      }
+    }
 
     return res.status(500).json({
       success: false,
