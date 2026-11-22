@@ -1,4 +1,5 @@
 // client/src/components/DocumentViewer.jsx
+
 function DocumentViewer({
   selectedDocument,
   originalName,
@@ -11,24 +12,35 @@ function DocumentViewer({
   }
 
   return (
-    <section aria-labelledby="selected-document-heading">
+    <section
+      className="document-viewer-section"
+      aria-labelledby="selected-document-heading"
+    >
       <h2 id="selected-document-heading">
         Selected Document
       </h2>
 
-      <h3>{originalName || selectedDocument}</h3>
+      <div className="document-viewer-header">
+        <span
+          className="document-viewer-icon"
+          aria-hidden="true"
+        >
+          📄
+        </span>
 
-      {loading && <p role="status">Loading document...</p>}
+        <h3 className="document-viewer-filename">
+          {originalName || selectedDocument}
+        </h3>
+      </div>
+
+      {loading && (
+        <p role="status">Loading document...</p>
+      )}
 
       {error && <p role="alert">{error}</p>}
 
       {!loading && !error && (
-        <pre
-          style={{
-            whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
-          }}
-        >
+        <pre className="document-viewer-content">
           {documentContent}
         </pre>
       )}
