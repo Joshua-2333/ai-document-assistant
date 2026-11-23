@@ -79,9 +79,16 @@ ${documentContent}
       systemPrompt
     );
   } finally {
-    // Close the MCP connection
+    // Close the MCP connection safely
     if (client) {
-      await client.close();
+      try {
+        await client.close();
+      } catch (cleanupError) {
+        console.error(
+          "Error closing MCP connection:",
+          cleanupError
+        );
+      }
     }
   }
 }

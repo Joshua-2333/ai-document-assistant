@@ -58,9 +58,16 @@ export async function getDocuments(req, res) {
       message: "Unable to fetch documents.",
     });
   } finally {
-    // Close the MCP connection
+    // Close the MCP connection safely
     if (client) {
-      await client.close();
+      try {
+        await client.close();
+      } catch (cleanupError) {
+        console.error(
+          "Error closing MCP connection:",
+          cleanupError
+        );
+      }
     }
   }
 }
@@ -95,11 +102,25 @@ export async function getDocumentContent(req, res) {
 
     const content = textContent.text;
 
-    // Handle errors returned by the Python tool
+    // Handle errors returned by the Python MCP tool
     if (content.startsWith("Error:")) {
-      return res.status(400).json({
+      let statusCode = 500;
+      let message = "Unable to read document.";
+
+      if (content === "Error: Document not found.") {
+        statusCode = 404;
+        message = "Document not found.";
+      } else if (content === "Error: Access denied.") {
+        statusCode = 403;
+        message = "Access denied.";
+      } else if (content === "Error: Unsupported file format.") {
+        statusCode = 400;
+        message = "Unsupported file format.";
+      }
+
+      return res.status(statusCode).json({
         success: false,
-        message: content,
+        message,
       });
     }
 
@@ -117,9 +138,16 @@ export async function getDocumentContent(req, res) {
       message: "Unable to read document.",
     });
   } finally {
-    // Close the MCP connection
+    // Close the MCP connection safely
     if (client) {
-      await client.close();
+      try {
+        await client.close();
+      } catch (cleanupError) {
+        console.error(
+          "Error closing MCP connection:",
+          cleanupError
+        );
+      }
     }
   }
 }
@@ -177,9 +205,16 @@ export async function searchDocuments(req, res) {
       message: "Unable to search documents.",
     });
   } finally {
-    // Close the MCP connection
+    // Close the MCP connection safely
     if (client) {
-      await client.close();
+      try {
+        await client.close();
+      } catch (cleanupError) {
+        console.error(
+          "Error closing MCP connection:",
+          cleanupError
+        );
+      }
     }
   }
 }
@@ -198,6 +233,14 @@ export async function askDocumentQuestion(req, res) {
       return res.status(400).json({
         success: false,
         message: "A filename and question are required.",
+      });
+    }
+
+    // Limit the length of questions sent to Qwen3
+    if (question.length > 10000) {
+      return res.status(400).json({
+        success: false,
+        message: "Question must be 10,000 characters or fewer.",
       });
     }
 
@@ -238,6 +281,40 @@ export async function askDocumentQuestion(req, res) {
   } catch (error) {
     console.error("Error asking document question:", error);
 
+    // Handle missing documents
+    if (error.message === "Error: Document not found.") {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found.",
+      });
+    }
+
+    // Handle Ollama connection failures
+    if (error.statusCode === 503) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Unable to connect to Ollama. Make sure Ollama is running.",
+      });
+    }
+
+    // Handle Ollama request timeouts
+    if (error.statusCode === 504) {
+      return res.status(504).json({
+        success: false,
+        message: "Ollama took too long to respond.",
+      });
+    }
+
+    // Handle unsuccessful Ollama API responses
+    if (error.statusCode === 502) {
+      return res.status(502).json({
+        success: false,
+        message: "Ollama failed to generate a response.",
+      });
+    }
+
+    // Handle other unexpected errors
     return res.status(500).json({
       success: false,
       message: "Unable to answer the document question.",
