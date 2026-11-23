@@ -196,3 +196,109 @@ export async function reserveAiUsage(
     client.release();
   }
 }
+
+// Reconcile a reservation with actual API token usage
+export async function completeAiUsage(
+  reservationId,
+  inputTokens,
+  outputTokens
+) {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Use the same lock as the reservation function
+    await client.query(
+      "SELECT pg_advisory_xact_lock($1)",
+      [482901]
+    );
+
+    // Retrieve the active reservation
+    const reservation = await client.query(
+      `
+      SELECT model, reserved_cost_usd
+      FROM ai_usage
+      WHERE id = $1
+        AND status IN ('pending', 'uncertain')
+      FOR UPDATE
+      `,
+      [reservationId]
+    );
+
+    if (reservation.rowCount !== 1) {
+      throw new Error("Active AI reservation not found.");
+    }
+
+    const model = reservation.rows[0].model;
+
+    // Calculate the actual cost using reported token usage
+    const actualCost = calculateCostUsd(
+      model,
+      inputTokens,
+      outputTokens
+    );
+
+    // Replace the estimated reservation with the actual cost
+    const result = await client.query(
+      `
+      UPDATE ai_usage
+      SET input_tokens = $2,
+          output_tokens = $3,
+          actual_cost_usd = $4,
+          status = 'completed',
+          completed_at = NOW()
+      WHERE id = $1
+      RETURNING
+        id,
+        reserved_cost_usd,
+        actual_cost_usd,
+        status,
+        actual_cost_usd > reserved_cost_usd
+          AS exceeded_reservation
+      `,
+      [
+        reservationId,
+        inputTokens,
+        outputTokens,
+        actualCost,
+      ]
+    );
+
+    await client.query("COMMIT");
+
+    // Warn if the actual cost exceeded our reservation
+    if (result.rows[0].exceeded_reservation) {
+      console.warn("Actual AI cost exceeded reservation.");
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+// Preserve the reservation when actual cost is unknown
+export async function markAiUsageUncertain(
+  reservationId
+) {
+  const result = await pool.query(
+    `
+    UPDATE ai_usage
+    SET status = 'uncertain'
+    WHERE id = $1
+      AND status = 'pending'
+    RETURNING id, status, reserved_cost_usd
+    `,
+    [reservationId]
+  );
+
+  if (result.rowCount !== 1) {
+    throw new Error("Pending AI reservation not found.");
+  }
+
+  return result.rows[0];
+}
