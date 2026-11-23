@@ -1,5 +1,5 @@
 // client/src/components/DocumentSearch.jsx
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { searchDocuments } from "../services/documentService";
 
 function DocumentSearch({ documents, onSelectDocument }) {
@@ -9,12 +9,17 @@ function DocumentSearch({ documents, onSelectDocument }) {
   const [error, setError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
 
+  // Track the most recent search request
+  const latestRequestId = useRef(0);
+
   async function handleSearch(event) {
     event.preventDefault();
 
     if (!query.trim()) {
       return;
     }
+
+    const requestId = ++latestRequestId.current;
 
     setLoading(true);
     setError("");
@@ -23,12 +28,24 @@ function DocumentSearch({ documents, onSelectDocument }) {
 
     try {
       const data = await searchDocuments(query.trim());
+
+      // Ignore results from older searches
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
       setResults(data);
       setHasSearched(true);
     } catch (err) {
+      if (requestId !== latestRequestId.current) {
+        return;
+      }
+
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (requestId === latestRequestId.current) {
+        setLoading(false);
+      }
     }
   }
 

@@ -1,7 +1,6 @@
 // server/src/services/documentAiService.js
 import { connectMcpServer } from "./mcpClient.js";
-import { generateResponse } from "./ollamaService.js";
-
+import { generateResponse } from "./aiProviderService.js";
 export async function askDocument(filename, question, history = []) {
   let client;
 

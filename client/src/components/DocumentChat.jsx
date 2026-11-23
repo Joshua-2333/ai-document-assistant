@@ -1,5 +1,4 @@
 // client/src/components/DocumentChat.jsx
-
 import { useEffect, useRef, useState } from "react";
 import { askDocumentQuestion } from "../services/documentService";
 
@@ -115,6 +114,7 @@ function DocumentChat({ selectedDocument, originalName }) {
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="What is this document about?"
           rows={3}
+          maxLength={10000}
         />
 
         <button
