@@ -15,20 +15,45 @@ async function initializeDatabase() {
     // Execute the database schema
     await pool.query(schema);
 
-    // Verify that the usage table exists
-    const result = await pool.query(`
+    // Define the required database tables
+    const requiredTables = [
+      "ai_usage",
+      "documents",
+    ];
+
+    // Verify that all required tables exist
+    const result = await pool.query(
+      `
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-        AND table_name = 'ai_usage'
-    `);
+        AND table_type = 'BASE TABLE'
+        AND table_name = ANY($1::text[])
+      `,
+      [requiredTables]
+    );
 
-    if (result.rowCount !== 1) {
-      throw new Error("AI usage table was not created.");
+    const existingTables = new Set(
+      result.rows.map((row) => row.table_name)
+    );
+
+    // Identify any missing tables
+    const missingTables = requiredTables.filter(
+      (table) => !existingTables.has(table)
+    );
+
+    if (missingTables.length > 0) {
+      throw new Error(
+        `Missing database tables: ${missingTables.join(", ")}`
+      );
     }
 
     console.log("Database initialized successfully.");
-    console.log("Table verified:", result.rows[0].table_name);
+
+    // Display each verified table
+    for (const table of requiredTables) {
+      console.log("Table verified:", table);
+    }
   } catch (error) {
     console.error("Database initialization failed:", error.message);
     process.exitCode = 1;

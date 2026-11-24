@@ -1,0 +1,48 @@
+# Git repository
+.git
+.gitignore
+
+# Environment variables and sensitive credentials
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+
+# Node.js dependencies
+**/node_modules
+
+# Python virtual environments
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+
+# Generated frontend builds
+client/dist
+
+# Private uploaded documents
+mcp-server/documents/
+mcp-server/document-metadata.json
+
+# Local test documents
+invalid-test.pdf
+invalid-upload.csv
+oversized-test.txt
+upload-test.txt
+
+# Deployment caches
+.vercel
+.netlify
+
+# Editor configuration
+.vscode
+.idea
+
+# Logs
+**/*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db

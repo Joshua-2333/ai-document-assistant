@@ -1,20 +1,19 @@
 // server/src/middleware/uploadMiddleware.js
 import multer from "multer";
 import path from "node:path";
+import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import {
+  documentLimits,
+  reserveDocumentStorage,
+} from "../services/documentOwnershipService.js";
 
 // Directory used by the Python MCP server
-const documentsDirectory = path.resolve(
-  __dirname,
-  "../../../mcp-server/documents"
+const documentsDirectory = fileURLToPath(
+  new URL("../../../mcp-server/documents/", import.meta.url)
 );
-
-// Maximum upload size: 10 MB
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 // Supported file extensions
 const allowedExtensions = new Set([
@@ -26,30 +25,81 @@ const allowedExtensions = new Set([
 // Configure where uploaded documents are saved
 const storage = multer.diskStorage({
   destination(req, file, callback) {
-    callback(null, documentsDirectory);
+    mkdir(documentsDirectory, { recursive: true })
+      .then(() => callback(null, documentsDirectory))
+      .catch((error) => callback(error));
   },
 
   filename(req, file, callback) {
-    // Extract a safe extension from the original filename
-    const extension = path.extname(file.originalname).toLowerCase();
+    async function prepareUpload() {
+      // Require a valid document session
+      if (
+        typeof req.sessionId !== "string" ||
+        !/^[a-f0-9]{64}$/.test(req.sessionId)
+      ) {
+        const error = new Error(
+          "Unable to identify document session."
+        );
 
-    // Generate a unique filename to prevent overwriting files
-    const filename = `${randomUUID()}${extension}`;
+        error.status = 400;
+        throw error;
+      }
 
-    callback(null, filename);
+      // Extract a safe file extension
+      const extension = path
+        .extname(file.originalname)
+        .toLowerCase();
+
+      // Generate a unique stored filename
+      const filename = `${randomUUID()}${extension}`;
+
+      // Track the attempted reservation for error cleanup
+      req.documentReservation = {
+        filename,
+        sessionId: req.sessionId,
+      };
+
+      // Reserve storage before writing the file
+      await reserveDocumentStorage(
+        req.sessionId,
+        filename,
+        file.originalname
+      );
+
+      return filename;
+    }
+
+    prepareUpload()
+      .then((filename) => callback(null, filename))
+      .catch((error) => callback(error));
   },
 });
 
 // Validate uploaded file types
 function fileFilter(req, file, callback) {
-  const extension = path.extname(file.originalname).toLowerCase();
+  const extension = path
+    .extname(file.originalname)
+    .toLowerCase();
 
   if (!allowedExtensions.has(extension)) {
-    return callback(
-      new Error(
-        "Unsupported file type. Only PDF, TXT, and Markdown files are allowed."
-      )
+    const error = new Error(
+      "Unsupported file type. Only PDF, TXT, and Markdown files are allowed."
     );
+
+    error.status = 400;
+
+    return callback(error);
+  }
+
+  // Validate the original filename
+  if (
+    !file.originalname.trim() ||
+    file.originalname.length > 255
+  ) {
+    const error = new Error("Invalid original filename.");
+    error.status = 400;
+
+    return callback(error);
   }
 
   callback(null, true);
@@ -60,7 +110,9 @@ export const uploadDocument = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: MAX_FILE_SIZE,
+    fileSize: documentLimits.maxFileSize,
     files: 1,
+    fields: 0,
+    parts: 2,
   },
 });

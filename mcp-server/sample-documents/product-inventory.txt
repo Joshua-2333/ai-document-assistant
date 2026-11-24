@@ -1,0 +1,12 @@
+NORTHSTAR DIGITAL - SAMPLE PRODUCT INVENTORY
+Fictional inventory for demonstration. Prices in USD.
+
+SKU | Product | Category | Unit price | Units in stock
+P001 | Wireless Mouse | Accessories | $25.00 | 40
+P002 | Mechanical Keyboard | Accessories | $89.00 | 18
+P003 | USB-C Hub | Accessories | $49.00 | 7
+P004 | 27-inch Monitor | Displays | $249.00 | 12
+P005 | Laptop Pro | Computers | $1199.00 | 5
+P006 | Webcam | Accessories | $59.00 | 0
+
+Reorder policy: reorder any product with fewer than 10 units in stock. Standard supplier delivery takes 5 business days.

@@ -1,5 +1,6 @@
 -- server/src/db/schema.sql
 
+-- AI usage and spending tracking
 CREATE TABLE IF NOT EXISTS ai_usage (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
@@ -38,3 +39,44 @@ CREATE INDEX IF NOT EXISTS idx_ai_usage_created_at
 -- Index for per-visitor daily limits
 CREATE INDEX IF NOT EXISTS idx_ai_usage_visitor_created_at
     ON ai_usage (visitor_id, created_at);
+
+
+-- Document ownership and storage tracking
+CREATE TABLE IF NOT EXISTS documents (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    filename TEXT NOT NULL UNIQUE,
+
+    original_name TEXT NOT NULL,
+
+    session_id TEXT NOT NULL
+        CHECK (session_id ~ '^[a-f0-9]{64}$'),
+
+    size_bytes BIGINT NOT NULL
+        CHECK (
+            size_bytes > 0
+            AND size_bytes <= 10485760
+        ),
+
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN (
+            'pending',
+            'active',
+            'deleting'
+        )),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    expires_at TIMESTAMPTZ NOT NULL
+        DEFAULT (NOW() + INTERVAL '24 hours'),
+
+    CHECK (expires_at > created_at)
+);
+
+-- Index for document ownership lookups
+CREATE INDEX IF NOT EXISTS idx_documents_session_id
+    ON documents (session_id);
+
+-- Index for expired document cleanup
+CREATE INDEX IF NOT EXISTS idx_documents_expires_at
+    ON documents (expires_at);

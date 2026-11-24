@@ -1,87 +1,108 @@
 // server/src/controllers/documentController.js
-import { unlink } from "node:fs/promises";
 import { connectMcpServer } from "../services/mcpClient.js";
 import { askDocument } from "../services/documentAiService.js";
-import {
-  getDocumentMetadata,
-  saveDocumentMetadata,
-} from "../services/documentMetadataService.js";
 import { validateDocument } from "../utils/validateDocument.js";
 
-export async function getDocuments(req, res) {
-  let client;
+import {
+  getAuthorizedDocuments,
+  verifyDocumentOwnership,
+  activateDocument,
+  cancelDocumentReservation,
+} from "../services/documentOwnershipService.js";
+
+// Return a standardized error response
+function sendError(res, error, fallbackMessage) {
+  console.error(fallbackMessage, {
+    name: error.name,
+    status: error.status ?? error.statusCode,
+  });
+
+  const status = error.status ?? error.statusCode;
+
+  if (
+    Number.isInteger(status) &&
+    status >= 400 &&
+    status < 500
+  ) {
+    return res.status(status).json({
+      success: false,
+      message: error.message,
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: fallbackMessage,
+  });
+}
+
+// Close an MCP connection safely
+async function closeMcpClient(client) {
+  if (!client) return;
 
   try {
-    // Connect to the Python MCP server
-    client = await connectMcpServer();
-
-    // Call the Python list_documents tool
-    const result = await client.callTool({
-      name: "list_documents",
-      arguments: {},
+    await client.close();
+  } catch (error) {
+    console.error("Error closing MCP connection:", {
+      name: error.name,
     });
+  }
+}
 
-    if (result.isError) {
-      throw new Error("MCP document tool failed.");
-    }
+// Clean up a failed document upload
+async function cleanupFailedUpload(req) {
+  const reservation = req.documentReservation;
 
-    // Extract the document list from the MCP response
-    const textContent = result.content.find(
-      (item) => item.type === "text"
+  if (!reservation) return;
+
+  try {
+    await cancelDocumentReservation(
+      reservation.sessionId,
+      reservation.filename
+    );
+  } catch (error) {
+    console.error("Document upload cleanup failed:", {
+      name: error.name,
+      code: error.code,
+    });
+  }
+}
+
+// Retrieve documents belonging to the current session
+export async function getDocuments(req, res) {
+  try {
+    const documents = await getAuthorizedDocuments(
+      req.sessionId
     );
 
-    if (!textContent) {
-      throw new Error("No document data returned from MCP.");
-    }
-
-    const filenames = JSON.parse(textContent.text);
-
-    // Read the saved original filenames
-    const metadata = await getDocumentMetadata();
-
-    // Combine stored filenames with display names
-    const documents = filenames.map((filename) => ({
-      filename,
-      originalName: metadata[filename]?.originalName ?? filename,
-    }));
-
-    // Return document information to React
     return res.json({
       success: true,
       documents,
     });
   } catch (error) {
-    console.error("Error fetching documents:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch documents.",
-    });
-  } finally {
-    // Close the MCP connection safely
-    if (client) {
-      try {
-        await client.close();
-      } catch (cleanupError) {
-        console.error(
-          "Error closing MCP connection:",
-          cleanupError
-        );
-      }
-    }
+    return sendError(
+      res,
+      error,
+      "Unable to fetch documents."
+    );
   }
 }
 
+// Read an authorized document
 export async function getDocumentContent(req, res) {
   let client;
 
   try {
     const { filename } = req.params;
 
-    // Connect to the Python MCP server
+    // Verify ownership before accessing the MCP server
+    await verifyDocumentOwnership(
+      req.sessionId,
+      filename
+    );
+
     client = await connectMcpServer();
 
-    // Call the Python read_document tool
     const result = await client.callTool({
       name: "read_document",
       arguments: { filename },
@@ -91,67 +112,63 @@ export async function getDocumentContent(req, res) {
       throw new Error("MCP document reading failed.");
     }
 
-    // Extract the document content
     const textContent = result.content.find(
       (item) => item.type === "text"
     );
 
     if (!textContent) {
-      throw new Error("No document content returned from MCP.");
+      throw new Error(
+        "No document content returned from MCP."
+      );
     }
 
     const content = textContent.text;
 
-    // Handle errors returned by the Python MCP tool
+    // Handle errors returned by the Python MCP server
     if (content.startsWith("Error:")) {
-      let statusCode = 500;
-      let message = "Unable to read document.";
-
       if (content === "Error: Document not found.") {
-        statusCode = 404;
-        message = "Document not found.";
-      } else if (content === "Error: Access denied.") {
-        statusCode = 403;
-        message = "Access denied.";
-      } else if (content === "Error: Unsupported file format.") {
-        statusCode = 400;
-        message = "Unsupported file format.";
+        return res.status(404).json({
+          success: false,
+          message: "Document not found.",
+        });
       }
 
-      return res.status(statusCode).json({
-        success: false,
-        message,
-      });
+      if (content === "Error: Access denied.") {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied.",
+        });
+      }
+
+      if (
+        content === "Error: Unsupported file format."
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Unsupported file format.",
+        });
+      }
+
+      throw new Error("Unable to read document.");
     }
 
-    // Return document content to React
     return res.json({
       success: true,
       filename,
       content,
     });
   } catch (error) {
-    console.error("Error reading document:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to read document.",
-    });
+    return sendError(
+      res,
+      error,
+      "Unable to read document."
+    );
   } finally {
-    // Close the MCP connection safely
-    if (client) {
-      try {
-        await client.close();
-      } catch (cleanupError) {
-        console.error(
-          "Error closing MCP connection:",
-          cleanupError
-        );
-      }
-    }
+    await closeMcpClient(client);
   }
 }
 
+// Search only documents belonging to the current session
 export async function searchDocuments(req, res) {
   let client;
 
@@ -166,14 +183,39 @@ export async function searchDocuments(req, res) {
       });
     }
 
-    // Connect to the Python MCP server
+    if (query.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Search query must be 1,000 characters or fewer.",
+      });
+    }
+
+    // Retrieve authorized documents
+    const documents = await getAuthorizedDocuments(
+      req.sessionId
+    );
+
+    const authorizedFilenames = documents.map(
+      (document) => document.filename
+    );
+
+    // Avoid unnecessary MCP requests
+    if (authorizedFilenames.length === 0) {
+      return res.json({
+        success: true,
+        results: [],
+      });
+    }
+
     client = await connectMcpServer();
 
-    // Call the Python search_documents tool
+    // Search only authorized filenames
     const result = await client.callTool({
       name: "search_documents",
       arguments: {
         query: query.trim(),
+        filenames: authorizedFilenames,
       },
     });
 
@@ -181,47 +223,54 @@ export async function searchDocuments(req, res) {
       throw new Error("MCP document search failed.");
     }
 
-    // Extract the search results
     const textContent = result.content.find(
       (item) => item.type === "text"
     );
 
     if (!textContent) {
-      throw new Error("No search results returned from MCP.");
+      throw new Error(
+        "No search results returned from MCP."
+      );
     }
 
     const results = JSON.parse(textContent.text);
 
-    // Return search results to React
+    if (!Array.isArray(results)) {
+      throw new Error("Invalid MCP search results.");
+    }
+
+    // Additional protection against unauthorized results
+    const authorizedSet = new Set(authorizedFilenames);
+
+    const authorizedResults = results.filter(
+      (item) =>
+        item &&
+        authorizedSet.has(item.filename)
+    );
+
     return res.json({
       success: true,
-      results,
+      results: authorizedResults,
     });
   } catch (error) {
-    console.error("Error searching documents:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to search documents.",
-    });
+    return sendError(
+      res,
+      error,
+      "Unable to search documents."
+    );
   } finally {
-    // Close the MCP connection safely
-    if (client) {
-      try {
-        await client.close();
-      } catch (cleanupError) {
-        console.error(
-          "Error closing MCP connection:",
-          cleanupError
-        );
-      }
-    }
+    await closeMcpClient(client);
   }
 }
 
+// Ask the AI a question about an authorized document
 export async function askDocumentQuestion(req, res) {
   try {
-    const { filename, question, history = [] } = req.body ?? {};
+    const {
+      filename,
+      question,
+      history = [],
+    } = req.body ?? {};
 
     // Validate the filename and question
     if (
@@ -232,15 +281,17 @@ export async function askDocumentQuestion(req, res) {
     ) {
       return res.status(400).json({
         success: false,
-        message: "A filename and question are required.",
+        message:
+          "A filename and question are required.",
       });
     }
 
-    // Limit the length of questions sent to the AI provider
+    // Limit question length
     if (question.length > 10000) {
       return res.status(400).json({
         success: false,
-        message: "Question must be 10,000 characters or fewer.",
+        message:
+          "Question must be 10,000 characters or fewer.",
       });
     }
 
@@ -264,27 +315,33 @@ export async function askDocumentQuestion(req, res) {
       });
     }
 
-    // Remove unexpected properties from conversation messages
-    const sanitizedHistory = history.map((message) => ({
-      role: message.role,
-      content: message.content,
-    }));
+    // Remove unexpected properties from conversation history
+    const sanitizedHistory = history.map(
+      (message) => ({
+        role: message.role,
+        content: message.content,
+      })
+    );
 
-    // Retrieve the server-generated visitor ID
+    // Verify document ownership before making an AI request
+    await verifyDocumentOwnership(
+      req.sessionId,
+      filename.trim()
+    );
+
+    // Retrieve the visitor identifier for AI usage tracking
     const visitorId = req.visitorId;
 
-    // Require visitor identification for paid AI requests
     if (
       process.env.AI_PROVIDER === "anthropic" &&
       !visitorId
     ) {
-      return res.status(500).json({
-        success: false,
-        message: "Unable to identify visitor.",
-      });
+      throw new Error(
+        "Visitor identification is required."
+      );
     }
 
-    // Ask the configured AI provider
+    // Generate an answer using the configured AI provider
     const answer = await askDocument(
       filename.trim(),
       question.trim(),
@@ -292,7 +349,6 @@ export async function askDocumentQuestion(req, res) {
       visitorId
     );
 
-    // Return the AI-generated answer to React
     return res.json({
       success: true,
       filename: filename.trim(),
@@ -300,33 +356,13 @@ export async function askDocumentQuestion(req, res) {
       answer,
     });
   } catch (error) {
-    // Avoid logging sensitive provider request details
-    console.error("Error asking document question:", {
-      name: error.name,
-      status: error.status ?? error.statusCode,
-    });
-
     // Handle missing documents
-    if (error.message === "Error: Document not found.") {
+    if (
+      error.message === "Error: Document not found."
+    ) {
       return res.status(404).json({
         success: false,
         message: "Document not found.",
-      });
-    }
-
-    // Handle AI request and spending limits
-    if (error.status === 429) {
-      return res.status(429).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
-    // Handle AI input token limits
-    if (error.status === 413) {
-      return res.status(413).json({
-        success: false,
-        message: error.message,
       });
     }
 
@@ -343,83 +379,96 @@ export async function askDocumentQuestion(req, res) {
     if (error.statusCode === 504) {
       return res.status(504).json({
         success: false,
-        message: "Ollama took too long to respond.",
+        message:
+          "Ollama took too long to respond.",
       });
     }
 
-    // Handle unsuccessful Ollama API responses
+    // Handle unsuccessful Ollama responses
     if (error.statusCode === 502) {
       return res.status(502).json({
         success: false,
-        message: "Ollama failed to generate a response.",
+        message:
+          "Ollama failed to generate a response.",
       });
     }
 
-    // Handle other unexpected errors
-    return res.status(500).json({
-      success: false,
-      message: "Unable to answer the document question.",
-    });
+    // Includes ownership, token, request, and budget errors
+    return sendError(
+      res,
+      error,
+      "Unable to answer the document question."
+    );
   }
 }
 
+// Validate and activate an uploaded document
 export async function uploadDocumentFile(req, res) {
   try {
-    // Check whether Multer received a file
+    // Ensure Multer received a document
     if (!req.file) {
+      await cleanupFailedUpload(req);
+
       return res.status(400).json({
         success: false,
-        message: "Please select a document to upload.",
+        message:
+          "Please select a document to upload.",
       });
+    }
+
+    const reservation = req.documentReservation;
+
+    // Verify that a matching storage reservation exists
+    if (
+      !reservation ||
+      reservation.filename !== req.file.filename ||
+      reservation.sessionId !== req.sessionId
+    ) {
+      throw new Error(
+        "Valid document reservation is required."
+      );
     }
 
     // Validate the actual uploaded file contents
-    const isValid = await validateDocument(req.file.path);
+    const isValid = await validateDocument(
+      req.file.path
+    );
 
     if (!isValid) {
-      // Delete the invalid uploaded file
-      await unlink(req.file.path);
+      await cleanupFailedUpload(req);
 
       return res.status(400).json({
         success: false,
-        message: "Invalid document content or file format.",
+        message:
+          "Invalid or unsupported document contents.",
       });
     }
 
-    // Save the original filename in document metadata
-    await saveDocumentMetadata(
+    // Activate the document and record its actual size
+    const document = await activateDocument(
+      req.sessionId,
       req.file.filename,
-      req.file.originalname
+      req.file.size
     );
 
-    // Return information about the uploaded document
     return res.status(201).json({
       success: true,
       message: "Document uploaded successfully.",
       document: {
-        filename: req.file.filename,
-        originalName: req.file.originalname,
-        size: req.file.size,
+        filename: document.filename,
+        originalName: document.original_name,
+        size: Number(document.size_bytes),
+        createdAt: document.created_at,
+        expiresAt: document.expires_at,
       },
     });
   } catch (error) {
-    console.error("Error uploading document:", error);
+    await cleanupFailedUpload(req);
 
-    // Remove the uploaded file if an error occurs
-    if (req.file?.path) {
-      try {
-        await unlink(req.file.path);
-      } catch (cleanupError) {
-        console.error(
-          "Error removing uploaded file:",
-          cleanupError
-        );
-      }
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to upload document.",
-    });
+    return sendError(
+      res,
+      error,
+      "Unable to upload document."
+    );
   }
 }
