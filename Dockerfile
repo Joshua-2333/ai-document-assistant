@@ -35,6 +35,10 @@ RUN /app/mcp-server/.venv/bin/python -m pip install \
 # Copy application source code
 COPY . .
 
+# Configure the production AI display name
+ARG VITE_AI_DISPLAY_NAME="Claude Haiku 5.5"
+ENV VITE_AI_DISPLAY_NAME=${VITE_AI_DISPLAY_NAME}
+
 # Build the React frontend
 RUN npm run build --workspace=client
 

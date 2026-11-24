@@ -2,6 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { askDocumentQuestion } from "../services/documentService";
 
+const AI_DISPLAY_NAME =
+  import.meta.env.VITE_AI_DISPLAY_NAME ||
+  (import.meta.env.DEV ? "Qwen3" : "AI Assistant");
+
 function DocumentChat({ selectedDocument, originalName }) {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -45,7 +49,7 @@ function DocumentChat({ selectedDocument, originalName }) {
     ]);
 
     try {
-      // Send the question and previous messages to Qwen3
+      // Send the question and previous messages to the AI provider
       const response = await askDocumentQuestion(
         selectedDocument,
         currentQuestion,
@@ -56,7 +60,7 @@ function DocumentChat({ selectedDocument, originalName }) {
         return;
       }
 
-      // Add Qwen3's answer to conversation history
+      // Add the AI assistant's answer to conversation history
       setMessages((previousMessages) => [
         ...previousMessages,
         {
@@ -126,7 +130,9 @@ function DocumentChat({ selectedDocument, originalName }) {
       </form>
 
       {loading && (
-        <p role="status">Qwen3 is generating an answer...</p>
+        <p role="status">
+          {AI_DISPLAY_NAME} is generating an answer...
+        </p>
       )}
 
       {error && <p role="alert">{error}</p>}
@@ -153,7 +159,7 @@ function DocumentChat({ selectedDocument, originalName }) {
                 >
                   <div className="chat-message-bubble">
                     <strong className="chat-message-sender">
-                      {isUser ? "You" : "Qwen3"}
+                      {isUser ? "You" : AI_DISPLAY_NAME}
                     </strong>
 
                     <span className="chat-message-content">
