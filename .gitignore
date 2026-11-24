@@ -58,5 +58,16 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Uploaded documents
-mcp-server/documents/
+# Uploaded documents and generated metadata
+/mcp-server/documents/
+/mcp-server/document-metadata.json
+
+# Temporary development test files
+/invalid-test.pdf
+/invalid-upload.csv
+/oversized-test.txt
+/upload-test.txt
+
+# Deployment tooling
+.vercel/
+.netlify/

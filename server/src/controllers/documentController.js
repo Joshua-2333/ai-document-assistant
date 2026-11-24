@@ -236,7 +236,7 @@ export async function askDocumentQuestion(req, res) {
       });
     }
 
-    // Limit the length of questions sent to Qwen3
+    // Limit the length of questions sent to the AI provider
     if (question.length > 10000) {
       return res.status(400).json({
         success: false,
@@ -264,11 +264,32 @@ export async function askDocumentQuestion(req, res) {
       });
     }
 
-    // Ask Qwen3 using the document and previous messages
+    // Remove unexpected properties from conversation messages
+    const sanitizedHistory = history.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
+
+    // Retrieve the server-generated visitor ID
+    const visitorId = req.visitorId;
+
+    // Require visitor identification for paid AI requests
+    if (
+      process.env.AI_PROVIDER === "anthropic" &&
+      !visitorId
+    ) {
+      return res.status(500).json({
+        success: false,
+        message: "Unable to identify visitor.",
+      });
+    }
+
+    // Ask the configured AI provider
     const answer = await askDocument(
       filename.trim(),
       question.trim(),
-      history
+      sanitizedHistory,
+      visitorId
     );
 
     // Return the AI-generated answer to React
@@ -279,13 +300,33 @@ export async function askDocumentQuestion(req, res) {
       answer,
     });
   } catch (error) {
-    console.error("Error asking document question:", error);
+    // Avoid logging sensitive provider request details
+    console.error("Error asking document question:", {
+      name: error.name,
+      status: error.status ?? error.statusCode,
+    });
 
     // Handle missing documents
     if (error.message === "Error: Document not found.") {
       return res.status(404).json({
         success: false,
         message: "Document not found.",
+      });
+    }
+
+    // Handle AI request and spending limits
+    if (error.status === 429) {
+      return res.status(429).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    // Handle AI input token limits
+    if (error.status === 413) {
+      return res.status(413).json({
+        success: false,
+        message: error.message,
       });
     }
 

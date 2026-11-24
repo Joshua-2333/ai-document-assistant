@@ -11,6 +11,7 @@ import {
 } from "../controllers/documentController.js";
 
 import { uploadDocument } from "../middleware/uploadMiddleware.js";
+import { identifyVisitor } from "../middleware/visitorMiddleware.js";
 
 const router = Router();
 
@@ -20,8 +21,8 @@ router.get("/", getDocuments);
 // Search documents
 router.get("/search", searchDocuments);
 
-// Ask Qwen3 a question about a document
-router.post("/ask", askDocumentQuestion);
+// Ask the configured AI provider a question about a document
+router.post("/ask", identifyVisitor, askDocumentQuestion);
 
 // Upload a PDF, TXT, or Markdown document
 router.post(

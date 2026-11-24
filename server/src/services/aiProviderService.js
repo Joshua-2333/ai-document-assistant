@@ -5,7 +5,8 @@ import * as anthropicService from "./anthropicService.js";
 export async function generateResponse(
   prompt,
   history = [],
-  systemPrompt = ""
+  systemPrompt = "",
+  visitorId
 ) {
   const provider = process.env.AI_PROVIDER || "ollama";
 
@@ -18,10 +19,19 @@ export async function generateResponse(
       );
 
     case "anthropic":
+      // Require visitor identification for paid AI requests
+      if (
+        typeof visitorId !== "string" ||
+        !/^[a-f0-9]{64}$/.test(visitorId)
+      ) {
+        throw new Error("Valid visitor identification is required.");
+      }
+
       return await anthropicService.generateResponse(
         prompt,
         history,
-        systemPrompt
+        systemPrompt,
+        visitorId
       );
 
     default:

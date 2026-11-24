@@ -1,7 +1,13 @@
 // server/src/services/documentAiService.js
 import { connectMcpServer } from "./mcpClient.js";
 import { generateResponse } from "./aiProviderService.js";
-export async function askDocument(filename, question, history = []) {
+
+export async function askDocument(
+  filename,
+  question,
+  history = [],
+  visitorId
+) {
   let client;
 
   try {
@@ -71,11 +77,12 @@ ${documentContent}
 `;
 
     // Generate an answer using the current question,
-    // previous conversation messages, and system instructions
+    // conversation history, system instructions, and visitor ID
     return await generateResponse(
       question,
       history,
-      systemPrompt
+      systemPrompt,
+      visitorId
     );
   } finally {
     // Close the MCP connection safely
